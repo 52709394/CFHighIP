@@ -1,0 +1,8 @@
+https://fofa.info
+server=="cloudflare" && asn=="25820" && country=="US" && tls.version="TLS 1.3"
+
+cloud_name="Cloudflare" && status_code="403" && tls.version="TLS 1.3" && asn=="906" && country=="US" && (ip="154.17.0.0/16" || ip="154.21.0.0/16" || ip="154.26.0.0/16" || ip="69.63.0.0/16")
+
+https://platform.censys.io
+
+host.services.software: (vendor = "cloudflare" and product = "waf") and host.services.endpoints.http.status_code:"403"  and  host.autonomous_system.asn:"906" and host.location.country="United States" and (host.ip:"154.17.0.0/16" or host.ip:"154.21.0.0/16" or host.ip:"154.26.0.0/16" or host.ip:"69.63.0.0/16")
