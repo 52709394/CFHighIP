@@ -9,10 +9,8 @@ func main() {
 	data := `
 
 `
-
-	re := regexp.MustCompile(`(?m)(\d+\.\d+\.\d+\.\d+[\s\S]*?(?:None|\z))`)
-
-	blocks := re.FindAllString(data, -1)
+	
+	blocks := splitByIP(data)
 
 	for _, b := range blocks {
 		ipRe := regexp.MustCompile(`(\d+\.\d+\.\d+\.\d+)`)
@@ -26,5 +24,34 @@ func main() {
 		}
 	
 	}
+}
+
+func splitByIP(text string) []string {
+	ipRe := regexp.MustCompile(`\d+\.\d+\.\d+\.\d+`)
+
+	var result []string
+
+	first := ipRe.FindStringIndex(text)
+	if first == nil {
+		return result
+	}
+
+	text = text[first[0]:]
+
+	for {
+		indices := ipRe.FindAllStringIndex(text, 2)
+
+		if len(indices) == 1 {
+			result = append(result, strings.TrimSpace(text))
+			break
+		}
+
+		block := text[:indices[1][0]]
+		result = append(result, strings.TrimSpace(block))
+
+		text = text[indices[1][0]:]
+	}
+
+	return result
 }
 
