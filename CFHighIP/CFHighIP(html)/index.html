@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>CF Worker 文本处理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        select {
+            display: block;
+            margin: 0 auto 10px auto;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 6px 12px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-top: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            margin-top: 10px;
+            padding: 6px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <!-- 选择处理模式 -->
+    <select id="mode">
+        <option value=""></option>
+        <option value="censys">censys 文本处理</option>
+        <option value="fofa">fofa 文本处理</option>
+        <option value="toIpPort">url to ip&port </option>
+        <option value="toUrl"> ip&port to Url </option>
+    </select>
+
+    <!-- 输入文本 -->
+    <textarea id="input"></textarea>
+
+    <!-- 附加文本 -->
+    <input type="text" id="extra">
+
+    <button onclick="send()">提交</button>
+
+    <button style="float: right;" onclick="_clear()">清除</button>
+
+    <textarea id="output" readonly></textarea>
+
+    <button onclick="copy()">复制</button>
+
+    <script>
+        function send() {
+            const text = document.getElementById("input").value;
+            const mode = document.getElementById("mode").value;
+            const extra = document.getElementById("extra").value;
+
+            let resultLines;
+            if (mode === "censys") {
+                let urls = ""
+                for (const ipText of splitCensysByIP(text)) {
+                    urls += setCensysProxyUrl(ipText, extra)
+                }
+                resultLines = urls;
+            } else if (mode === "fofa") {
+
+                resultLines = setFofaProxyUrl(text, extra)
+
+            } else if (mode === "toIpPort") {
+                let ips = ""
+                const ipPortRe = /\@(\d+\.\d+\.\d+\.\d+)\:(\d+)\?/g;
+
+                const matches = text.matchAll(ipPortRe)
+                for (const p of matches) {
+                    if (extra) {
+                        ips += `${p[1]},${p[2]}#${extra}\n`
+                    } else {
+                        ips += `${p[1]},${p[2]}\n`
+                    }
+
+                }
+                resultLines = ips
+            } else if (mode === "toUrl") {
+                resultLines = setProxyUrl(text, extra)
+
+            } else {
+                resultLines = "";
+            }
+
+            document.getElementById("output").value = resultLines;
+        }
+
+        function setCensysProxyUrl(text, proxyUrl) {
+
+            const urlRe = /^(.*?\@).*?\:\d+(\?.*)$/
+            const urlMatch = proxyUrl.match(urlRe)
+
+            if (!urlMatch) {
+                return ""
+            }
+
+            let urls = ""
+            const ipMatch = text.match(/\d+\.\d+\.\d+\.\d+/)
+            const portsMatch = text.matchAll(/\s*(\d+)\s*\/\s*HTTP/g)
+            for (const p of portsMatch) {
+                const ip = ipMatch[0] + ":" + p[1]
+                urls += urlMatch[1] + ip + urlMatch[2] + "\n"
+            }
+            return urls
+        }
+
+        function splitCensysByIP(text) {
+            const ipRe = /\d+\.\d+\.\d+\.\d+/g
+            const result = []
+
+            // 1. 找第一个 IP
+            const firstMatch = text.match(ipRe)
+            if (!firstMatch) {
+                return result
+            }
+
+            const firstIndex = text.indexOf(firstMatch[0])
+
+            // 切掉前面的垃圾文本
+            text = text.slice(firstIndex)
+
+            while (true) {
+                // 2. 找当前 text 里的前两个 IP
+                const matches = [...text.matchAll(ipRe)]
+
+                if (matches.length === 1) {
+                    // 最后一个 IP，全部加入
+                    result.push(text.trim())
+                    break
+                }
+
+                // 第二个 IP 的起始位置
+                const secondIPIndex = matches[1].index
+
+                const block = text.slice(0, secondIPIndex)
+                result.push(block.trim())
+
+                // 切掉已处理部分
+                text = text.slice(secondIPIndex)
+            }
+
+            return result
+        }
+
+        function setFofaProxyUrl(text, proxyUrl) {
+
+            const urlRe = /^(.*?\@).*?\:\d+(\?.*)$/
+            const urlMatch = proxyUrl.match(urlRe)
+
+            if (!urlMatch) {
+                return ""
+            }
+
+            let urls = ""
+            const ipRe = /^\s*https:\/\/(\d+\.\d+\.\d+\.\d+(?:\:\d+)?)\s+/mg;
+
+
+            for (const p of text.matchAll(ipRe)) {
+                let ip
+                if (p[1].match(/\:\d+$/)) {
+                    ip = p[1]
+                } else {
+                    ip = p[1] + ":443"
+                }
+                urls += urlMatch[1] + ip + urlMatch[2] + "\n"
+            }
+            return urls
+        }
+
+        function setProxyUrl(text, proxyUrl) {
+
+            const urlRe = /^(.*?\@).*?\:\d+(\?.*)$/
+            const urlMatch = proxyUrl.match(urlRe)
+
+            if (!urlMatch) {
+                return ""
+            }
+
+            let urls = ""
+            const ipRe = /(\d+\.\d+\.\d+\.\d+)\s*\,\s*(\d+)/g;
+
+
+            for (const p of text.matchAll(ipRe)) {
+                const ip = p[1] + ":" + p[2]
+
+                urls += urlMatch[1] + ip + urlMatch[2] + "\n"
+            }
+            return urls
+        }
+
+        function _clear() {
+            document.getElementById("input").value = "";
+            document.getElementById("extra").value = "";
+        }
+
+        function copy() {
+
+            const textToCopy = document.getElementById("output").value;
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    console.log('文本已成功复制到剪贴板');
+                    alert('复制成功！');
+                })
+                .catch(err => {
+                    console.error('复制失败: ', err);
+                    alert('复制失败，请检查浏览器权限。');
+                });
+        }
+    </script>
+
+</body>
+
+</html>
