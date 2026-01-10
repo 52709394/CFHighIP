@@ -102,9 +102,9 @@
 
             let inputText = ""
 
-             if ( mode === "appInfo") {
+            if (mode === "appInfo") {
                 inputText = appInfoText()
-             } else if (mode === "getCensys") {
+            } else if (mode === "getCensys") {
                 inputText = getCensysText()
             } else if (mode === "getFofa") {
                 inputText = getFofaText()
@@ -127,8 +127,14 @@
             let resultLines;
             if (mode === "setCensys") {
                 let urls = ""
+                const match = splitUrl(extra)
+
+                if (!match) {
+                    return ""
+                }
+
                 for (const ipText of splitCensysByIP(text)) {
-                    urls += setCensysProxyUrl(ipText, extra)
+                    urls += setCensysProxyUrl(ipText, match)
                 }
                 resultLines = urls;
             } else if (mode === "setFofa") {
@@ -174,13 +180,7 @@
             return match
         }
 
-        function setCensysProxyUrl(text, proxyUrl) {
-
-            const urlMatch = splitUrl(proxyUrl)
-
-            if (!urlMatch) {
-                return ""
-            }
+        function setCensysProxyUrl(text, urlMatch) {
 
             let urls = ""
             const ipMatch = text.match(/\d+\.\d+\.\d+\.\d+/)
@@ -293,7 +293,7 @@
                 });
         }
 
-        function appInfoText(){
+        function appInfoText() {
             return `
             1.选择框,选处理模式或查看教程
             2.第一个文本框,主要粘贴要处理的数据
@@ -333,18 +333,7 @@
              )
              *n*
              2.下载结果:
-             2.1.免费用户是无法下载,只能网页提取数据, windows 系统, 保存搜索结果, 在浏览器 按 Crtl+s 保存整个网页 
-             2.2.有一个html文件和一个文件夹(html布局与控件样式,是不要的,但不能直接删除,会连同html文件也会删除), windows 系统, 先把 html文件 拖到回收站 , 文件夹也会 自动 去回收站的, 然后 单独 html 文件单独还原 (只要 html 文件,没文件夹中html控件样式,更容易复制文本)
-             2.3.浏览器打开 html 文件, 复制 ip 信息! 
-             例如(内容):
-             x.x.x.x
-             ......
-             ......
-             None
-             x.x.x.x
-             ......
-             ......
-             None
+             免费用户是无法下载,只能网页提取数据, 直接 选中所有 网页 搜索出来的结果,然后复制! (复制ip信息部分既可,自动去取网页样式和布局)
              *n*
              3.数据处理:
              3.1.选择 censys 文本处理 模式
