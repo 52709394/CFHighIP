@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
-	"strings"
 )
 
 func main() {
 	text := `
-
 	`
 
 	pattern := `(\d+\.\d+\.\d+\.\d+)(\/\d+)`
@@ -31,7 +29,7 @@ func main() {
 			continue
 		}
 
-		if strings.Contains(string(out), "[CN2-BackBone]") {
+		if matched, _ := regexp.MatchString(`59\.43\.\d+\.\d+`, string(out)); matched {
 			fmt.Println(ip[1] + ip[2])
 		} else {
 			fmt.Println(ip[1] + ip[2] + "不是")
