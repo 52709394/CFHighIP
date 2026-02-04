@@ -9,23 +9,35 @@ func main() {
 	text := `
 
 `
+	
+	userUrl := ``
 
-	re := regexp.MustCompile(`(?m)^\s*https\:\/\/(\d+\.\d+\.\d+\.\d+(?:\:\d+|))\s+`)
+	if matched, _ := regexp.MatchString(`(?m)^\s*https\:\/\/(\d+\.\d+\.\d+\.\d+)((?:\:\d+|))\s+`, text); !matched {
+		return
+	}
 
-	matches := re.FindAllStringSubmatch(text, -1)
+	if matched, _ := regexp.MatchString(`(?m)^(.*?\@)\d+\.\d+\.\d+\.\d+\:\d+(\?.*?)$`, userUrl); !matched {
+		return
+	}
 
-	for _, m := range matches {
+	urlRe := regexp.MustCompile(`(?m)^(.*?\@)\d+\.\d+\.\d+\.\d+\:\d+(\?.*?)$`)
+
+	urlMatch := urlRe.FindStringSubmatch(userUrl)
+
+	ipRe := regexp.MustCompile(`(?m)^\s*https\:\/\/(\d+\.\d+\.\d+\.\d+)((?:\:\d+|))\s+`)
+
+	ipMatchs := ipRe.FindAllStringSubmatch(text, -1)
+
+	for _, p := range ipMatchs {
 		var ip string
 
-		if matched, _ := regexp.MatchString(`\:\d+$`, m[1]); matched {
-			ip = m[1]
+		if p[2] != "" {
+			ip = p[1] + p[2]
 		} else {
-			ip = m[1] + ":443"
+			ip = p[1] + ":443"
 		}
 
-		fmt.Println(``)
+		fmt.Println(urlMatch[1] + ip + urlMatch[2])
 
 	}
 }
-
-
