@@ -2,7 +2,7 @@
 
 目的:使用原版系统(immortalwrt或openwrt),追求更稳定的体验!
 (
-思路: 原厂系统,刷入过渡包 -> 刷入23.05.01 -> 刷入支持itb 镜像的第三uboot->刷入24版 sysupgrade itb->刷入官方uboot和bl->在 luci web 自由刷入 官方 sysupgrade itb镜像
+思路: 原厂系统,刷入过渡包 -> 刷入23.05.01 -> 刷入支持itb 镜像的第三uboot -> 刷入24版 sysupgrade itb -> 刷入官方uboot和bl -> 在 luci web 自由刷入官方 sysupgrade itb 镜像
 
 ps: 如果不想折腾选择 mt7981-jcg_q30-fip-expand.bin uboot 就可以啦!
 )
