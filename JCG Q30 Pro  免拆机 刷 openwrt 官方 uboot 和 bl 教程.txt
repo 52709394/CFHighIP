@@ -1,0 +1,81 @@
+捷稀JCG Q30 Pro  免拆机 刷 openwrt 官方 uboot 和 bl 教程
+
+目的:使用原版系统(immortalwrt或openwrt),追求更稳定的体验!
+(
+思路: 原厂系统,刷入过渡包 -> 刷入23.05.01 -> 刷入支持itb 镜像的第三uboot->刷入24版 sysupgrade itb->刷入官方uboot和bl->在 luci web 自由刷入 官方 sysupgrade itb镜像
+
+ps: 如果不想折腾选择 mt7981-jcg_q30-fip-expand.bin uboot 就可以啦!
+)
+
+参考连接：
+Kevin.MX大神的免刷机教程：https://mary.kevinmx.top/default/JCG-Q30-Pro-Neo.html
+
+先按 Kevin.MX大神的免刷机教程 走一遍!
+1.原厂系统,刷入过渡包(不保留配置)
+( 
+下载地址:
+https://mary.kevinmx.top/usr/uploads/2023/06/immortalwrt_mediatek_mt7981_mt7981_spim_nand_rfb_squashfs_sysupgrade.bin
+)
+
+2.断电,按住路由器的reset键,再通电,进入uboot刷机模式,升级23.05.01
+(
+# 此系统支持 mtd write 写入 uboot, 不用安装 mtd 写入模块
+镜像下载地址:
+https://downloads.immortalwrt.org/releases/23.05.1/targets/mediatek/filogic/immortalwrt-23.05.1-mediatek-filogic-jcg_q30-ubootmod-squashfs-factory.bin
+)
+
+3. 进入 23.05.01 系统 ,ssh 命令:(刷入支持itb的第三方uboot,过渡包的uboot是不支持itb镜像的)
+(
+curl -L https://firmware.download.immortalwrt.eu.org/uboot/mediatek/mt7981-jcg_q30-fip-expand.bin -o /tmp/FIP.bin
+mtd write /tmp/FIP.bin FIP
+)
+
+4.断电,按住路由器的reset键,再通电,进入 uboot 刷机模式,刷入24版 immortalwrt (itb镜像)
+(
+镜像下载地址:
+https://downloads.immortalwrt.org/releases/24.10.6/targets/mediatek/filogic/immortalwrt-24.10.6-mediatek-filogic-jcg_q30-pro-squashfs-sysupgrade.itb
+)
+
+5.进入24版系统, ssh 命令:(刷入官方uboot和官方bl,需要在 24版  immortalwrt或openwrt 官方版 sysupgrade 系统进行, 23版系统会无法启动的)
+(
+#更新软件包
+opkg update
+
+#安装 mtd 写入模块(重要)
+opkg install kmod-mtd-rw
+
+ #允许写入 fip 和 bl 系统重启后,命令会失效的
+insmod mtd-rw.ko i_want_a_brick=1
+
+#下载openwrt 25.12.4 官方 uboot
+curl -L https://downloads.openwrt.org/releases/25.12.4/targets/mediatek/filogic/openwrt-25.12.4-mediatek-filogic-jcg_q30-pro-bl31-uboot.fip -o /tmp/fip.fip 
+#写入fip
+mtd write /tmp/fip.fip fip
+
+#下载openwrt 25.12.4 官方 uboot
+curl -L https://downloads.openwrt.org/releases/25.12.4/targets/mediatek/filogic/openwrt-25.12.4-mediatek-filogic-jcg_q30-pro-preloader.bin -o /tmp/bl.bin 
+#写入bl
+mtd write /tmp/bl.bin bl2
+
+)
+#注意:断电,按住路由器的reset键,通电,再次进入uboot刷机模式,就没有啦!
+
+6. 完结撒花, 可以在 luci web 升级页面, 自由刷入 24版和25版 官方版 sysupgrade itb镜像 (如果是 openwrt 官方的 23版 sysupgrade itb镜像 也是支持的)! 切记不要保留配置)
+
+
+ps: 
+1.使用 curl -L 下载时,一定确定下载完整,再使用 mtd write 写入!
+2.建议在本地电脑 使用 "加速器" 下载完成 uboot 和 bl, 使用 sftp 或 tftp 上传到 /tmp/ 下, 再使用 mtd write 写入! 比较稳妥
+(
+https://firmware.download.immortalwrt.eu.org/uboot/mediatek/mt7981-jcg_q30-fip-expand.bin
+ #[openwrt 官方 25.12.4 uboot , 当然可以换成 immortalwrt 的]
+https://downloads.openwrt.org/releases/25.12.4/targets/mediatek/filogic/openwrt-25.12.4-mediatek-filogic-jcg_q30-pro-bl31-uboot.fip
+ #[openwrt 官方 25.12.4 bl , 当然可以换成 immortalwrt 的]
+https://downloads.openwrt.org/releases/25.12.4/targets/mediatek/filogic/openwrt-25.12.4-mediatek-filogic-jcg_q30-pro-preloader.bin
+)
+3.写入 24版以上的 uboot 和 bl, 一定要在24版以上的系统写入,不能在23版系统写入,不然无法正常加载系统的!(重要)
+4.mt7981-jcg_q30-fip-expand.bin,uboot其实可以引导 原版openwrt 25.12.4 启动(我个人测试过)!
+
+
+
+
