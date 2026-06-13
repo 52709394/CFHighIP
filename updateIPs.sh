@@ -1,7 +1,6 @@
 #!/bin/sh
 
-DATA='
-'
+ips=$(cat ips.txt)
 
 i=0
 
@@ -9,17 +8,15 @@ while IFS=',' read -r ip port
 do
     [ -z "$ip" ] && continue
 
-    # 保存
     eval "ip${i}='$ip'"
     eval "port${i}='$port'"
 
     i=$((i+1))
 
 done <<EOF
-$DATA
+$ips
 EOF
 
-# 保存总数
 count=$i
 
 _inbound() {
@@ -86,7 +83,7 @@ _json(){
 }
 
 
-echo "" > okIPs.txt
+[ -e "okIPs.txt" ] && rm okIPs.txt
 
 ! [ -d "/tmp/sing-box" ] && mkdir /tmp/sing-box
 
@@ -105,12 +102,10 @@ while [ "$x" -lt "$count" ]; do
         eval "port=\$port${x}"
         tag=$t
 
-        # 保存每组变量
         eval "newip${i}=\$ip"
         eval "newport${i}=\$port"
         eval "tag${i}=\$tag"
 
-        # 拼接 JSON
         [ -n "$inbounds" ] && inbounds="${inbounds},"
         inbounds="${inbounds}$(_inbound "in$tag" "$tag")"
 
@@ -126,8 +121,6 @@ while [ "$x" -lt "$count" ]; do
 
     _json "$inbounds" "$outbounds" "$routes" | jq . > /tmp/sing-box/config.json
     
-    echo $(cat /tmp/sing-box/config.json | jq .)
-
     /usr/bin/sing-box run -c /tmp/sing-box/config.json &
     pid=$!
 
@@ -139,18 +132,9 @@ while [ "$x" -lt "$count" ]; do
         eval "port=\$newport${y}"
         eval "tagPort=\$tag${y}"
 
-    delay=$(
-    curl \
-        --socks5 "127.0.0.1:$tagPort" \
-        -o /dev/null \
-        -s \
-        -m 5 \
-        -w '%{time_total}' \
-        https://www.gstatic.com/generate_204
-    )
-
-    if [ $? -eq 0 ]; then
-        echo "$ip,$port,$delay" 
+    delay=$(curl -x "socks5h://127.0.0.1:$tagPort" ifconfig.me/ip)
+     
+    if [ "$delay" == "23.94.181.93" ]; then
         echo "$ip,$port" >> okIPs.txt
     fi
 
@@ -158,6 +142,52 @@ while [ "$x" -lt "$count" ]; do
     done
 
     kill $pid
-    wait "$pid" 2>/dev/null
     sleep 1
 done
+
+okIPs=$(cat okIPs.txt)
+
+i=1
+
+while IFS=',' read -r ip port
+do
+    [ -z "$ip" ] && continue
+
+    eval "okIp${i}='$ip'"
+    eval "okPort${i}='$port'"
+
+    i=$((i+1))
+
+done <<EOF
+$okIPs
+EOF
+
+count=$i
+size=10
+
+if [ $size -lt $count ];then
+
+list=""
+i=0 
+[ -e "updateIPs.txt" ] && rm updateIPs.txt
+
+while [ $i -lt $size ]
+do
+    n=$(( 0x$(hexdump -n 2 -e '/2 "%04X"' /dev/urandom) % $count + 1 ))
+
+    echo " $list " | grep -q " $n " && continue
+
+    list="$list $n"
+    
+    eval "ip=\$okIp${n}"
+    eval "port=\$okPort${n}"
+
+    echo "$ip,$port" >> updateIPs.txt
+
+    i=$((i+1))
+done
+else
+cp -rf okIPs.txt updateIPs.txt
+fi
+
+echo $(cat updateIPs.txt)
