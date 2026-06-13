@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ips=$(cat ips.txt)
+ips=$(cat /root/ips.txt)
 
 i=0
 
@@ -83,7 +83,7 @@ _json(){
 }
 
 
-[ -e "okIPs.txt" ] && rm okIPs.txt
+[ -e "/root/okIPs.txt" ] && rm /root/okIPs.txt
 
 ! [ -d "/tmp/sing-box" ] && mkdir /tmp/sing-box
 
@@ -134,8 +134,9 @@ while [ "$x" -lt "$count" ]; do
 
     delay=$(curl -x "socks5h://127.0.0.1:$tagPort" ifconfig.me/ip)
      
-    if [ "$delay" == "23.94.181.93" ]; then
-        echo "$ip,$port" >> okIPs.txt
+    if [ "$delay" == "ip" ]; then
+        echo "$ip,$port,$delay"
+        echo "$ip,$port" >> /root/okIPs.txt
     fi
 
         y=$((y+1))
@@ -145,7 +146,7 @@ while [ "$x" -lt "$count" ]; do
     sleep 1
 done
 
-okIPs=$(cat okIPs.txt)
+okIPs=$(cat /root/okIPs.txt)
 
 i=1
 
@@ -169,7 +170,7 @@ if [ $size -lt $count ];then
 
 list=""
 i=0 
-[ -e "updateIPs.txt" ] && rm updateIPs.txt
+[ -e "/root/updateIPs.txt" ] && rm /root/updateIPs.txt
 
 while [ $i -lt $size ]
 do
@@ -182,12 +183,34 @@ do
     eval "ip=\$okIp${n}"
     eval "port=\$okPort${n}"
 
-    echo "$ip,$port" >> updateIPs.txt
+    [ "$ip" != "" ]  && echo "$ip,$port" >> /root/updateIPs.txt
 
     i=$((i+1))
 done
 else
-cp -rf okIPs.txt updateIPs.txt
+cp -rf /root/okIPs.txt /root/updateIPs.txt
 fi
 
-echo $(cat updateIPs.txt)
+
+TOKEN="ghp_xxxxxxxxx"
+REPO="用户名/仓库"
+FILE="result.txt"
+
+SHA=$(curl -s \
+-H "Authorization: Bearer $TOKEN" \
+https://api.github.com/repos/$REPO/contents/$FILE \
+| jq -r '.sha')
+
+
+CONTENT=$(base64 "/root/$FILE"| tr -d '\n')
+
+curl -L \
+  -X PUT \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $TOKEN" \
+  https://api.github.com/repos/$REPO/contents/$FILE \
+  -d "{
+    \"message\":\"auto update\",
+    \"content\":\"$CONTENT\",
+    \"sha\":\"$SHA\"
+  }"
