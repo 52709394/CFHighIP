@@ -163,6 +163,10 @@ done <<EOF
 $okIPs
 EOF
 
+if [ $i -lt 15 ]; then
+    exit 1
+fi
+
 count=$i
 size=10
 
