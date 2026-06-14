@@ -1,23 +1,30 @@
 #!/bin/sh
 
-ips=$(cat /root/ips.txt)
 
-i=0
+_getIPs(){
+
+
+  local iIP=$1
+  local iPort=$2
+  local iIPs=$3
+  local i=0
 
 while IFS=',' read -r ip port
 do
     [ -z "$ip" ] && continue
 
-    eval "ip${i}='$ip'"
-    eval "port${i}='$port'"
+    eval "$iIP${i}='$ip'"
+    eval "$iPort${i}='$port'"
 
     i=$((i+1))
 
 done <<EOF
-$ips
+$iIPs
 EOF
 
-count=$i
+COUNT=$i
+}
+
 
 _inbound() {
     printf '
@@ -83,12 +90,26 @@ _json(){
 }
 
 
+_testIPs(){
+
+local count=$1
+local size=$2
+local x=0
+
+local  inbounds=""
+local  outbounds=""
+local  routes=""
+
+local i=0
+local t=0
+local tag=0
+local y=0
+local pid=0
+local delay="" 
+
 [ -e "/root/okIPs.txt" ] && rm /root/okIPs.txt
 
 ! [ -d "/tmp/sing-box" ] && mkdir /tmp/sing-box
-
-size=10
-x=0
 
 while [ "$x" -lt "$count" ]; do
     inbounds=""
@@ -123,8 +144,8 @@ while [ "$x" -lt "$count" ]; do
     
     /usr/bin/sing-box run -c /tmp/sing-box/config.json &
     pid=$!
-
     sleep 3
+    kill -0 $pid 2>/dev/null || continue
     
     y=0
     while [ "$y" -lt "$i" ]; do
@@ -132,55 +153,46 @@ while [ "$x" -lt "$count" ]; do
         eval "port=\$newport${y}"
         eval "tagPort=\$tag${y}"
 
-    delay=$(curl -x "socks5h://127.0.0.1:$tagPort" ifconfig.me/ip)
+    delay=$(curl \
+            --retry 2 \
+            --connect-timeout 3 \
+            --max-time 5 \
+            -s \
+            -x "socks5h://127.0.0.1:$tagPort" \
+            ifconfig.me/ip)
      
-    if [ "$delay" == "ip" ]; then
+    if [ "$delay" = "123.123.123.123" ]; then
         echo "$ip,$port,$delay"
         echo "$ip,$port" >> /root/okIPs.txt
     fi
-
         y=$((y+1))
     done
 
     kill $pid
     sleep 1
 done
+}
 
-okIPs=$(cat /root/okIPs.txt)
+_randomIPs(){
 
-i=1
-
-while IFS=',' read -r ip port
-do
-    [ -z "$ip" ] && continue
-
-    eval "okIp${i}='$ip'"
-    eval "okPort${i}='$port'"
-
-    i=$((i+1))
-
-done <<EOF
-$okIPs
-EOF
-
-if [ $i -lt 15 ]; then
-    exit 1
-fi
-
-count=$i
-size=10
+local size=$2
+local count=$1 
 
 if [ $size -lt $count ];then
 
-list=""
-i=0 
+local list=""
+local i=0 
+local n=0
+
 [ -e "/root/updateIPs.txt" ] && rm /root/updateIPs.txt
 
 while [ $i -lt $size ]
 do
     n=$(( 0x$(hexdump -n 2 -e '/2 "%04X"' /dev/urandom) % $count + 1 ))
 
-    echo " $list " | grep -q " $n " && continue
+    case " $list " in
+    *" $n "*) continue ;;
+    esac
 
     list="$list $n"
     
@@ -194,27 +206,65 @@ done
 else
 cp -rf /root/okIPs.txt /root/updateIPs.txt
 fi
+}
 
 
-TOKEN="ghp_xxxxxxxxx"
-REPO="用户名/仓库"
-FILE="result.txt"
+_updateIPs() {
 
-SHA=$(curl -s \
--H "Authorization: Bearer $TOKEN" \
-https://api.github.com/repos/$REPO/contents/$FILE \
+local token="ghp_xxxxxxxxx"
+local repo="用户名/仓库"
+local file="updateIPs.txt"
+
+local content=$(base64 < "/root/$file" | tr -d '\n')
+
+local sha=$(curl -s \
+-H "Authorization: Bearer $token" \
+https://api.github.com/repos/$repo/contents/$file \
 | jq -r '.sha')
 
+local date=""
 
-CONTENT=$(base64 "/root/$FILE"| tr -d '\n')
+if [ "$sha" = "null" ]; then
+    data="
+    \"message\":\"auto update\",
+    \"content\":\"$content\"
+  "
+else
+    data="
+    \"message\":\"auto update\",
+    \"content\":\"$content\",
+    \"sha\":\"$sha\"
+  "
+fi
 
 curl -L \
   -X PUT \
   -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer $TOKEN" \
-  https://api.github.com/repos/$REPO/contents/$FILE \
-  -d "{
-    \"message\":\"auto update\",
-    \"content\":\"$CONTENT\",
-    \"sha\":\"$SHA\"
-  }"
+  -H "Authorization: Bearer $token" \
+  https://api.github.com/repos/$repo/contents/$file \
+  -d "{$data}"
+}
+
+_run(){
+
+local count=0
+
+_getIPs "ip" "port" "$(cat /root/ips.txt)"
+count=$COUNT 
+
+_testIPs $count 10
+
+_getIPs "okIp" "okPort" "$(cat /root/okIPs.txt)"
+count=$COUNT
+
+if [ $count -lt 15 ]; then
+    exit 1
+fi
+
+_randomIPs $count 10
+
+_updateIPs
+
+}
+
+_run
