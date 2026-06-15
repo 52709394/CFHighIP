@@ -3,7 +3,6 @@
 
 _getIPs(){
 
-
   local iIP=$1
   local iPort=$2
   local iIPs=$3
@@ -154,15 +153,16 @@ while [ "$x" -lt "$count" ]; do
         eval "tagPort=\$tag${y}"
 
     delay=$(curl \
-            --retry 2 \
             --connect-timeout 3 \
             --max-time 5 \
+            -o /dev/null \
             -s \
+            -w '%{http_code}' \
             -x "socks5h://127.0.0.1:$tagPort" \
-            ifconfig.me/ip)
+            https://www.gstatic.com/generate_204)
      
-    if [ "$delay" = "123.123.123.123" ]; then
-        echo "$ip,$port,$delay"
+    if [ "$delay" = "204" ]; then
+        echo "$ip,$port ok"
         echo "$ip,$port" >> /root/okIPs.txt
     fi
         y=$((y+1))
