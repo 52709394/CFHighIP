@@ -188,7 +188,7 @@ local n=0
 
 while [ $i -lt $size ]
 do
-    n=$(( 0x$(hexdump -n 2 -e '/2 "%04X"' /dev/urandom) % $count + 1 ))
+    n=$(( 0x$(hexdump -n 2 -e '/2 "%04X"' /dev/urandom) % $count ))
 
     case " $list " in
     *" $n "*) continue ;;
@@ -199,7 +199,9 @@ do
     eval "ip=\$okIp${n}"
     eval "port=\$okPort${n}"
 
-    [ "$ip" != "" ]  && echo "$ip,$port" >> /root/updateIPs.txt
+    [ "$ip" = "" ]  && continue
+    
+    echo "$ip,$port" >> /root/updateIPs.txt
 
     i=$((i+1))
 done
@@ -248,11 +250,28 @@ curl -L \
 _run(){
 
 local count=0
+local size=10
 
-_getIPs "ip" "port" "$(cat /root/ips.txt)"
+
+local ips=""
+local url="https://www.163.com/ips.txt"
+
+ips=$(curl \
+--connect-timeout 5 \
+-s $url) || ips=""
+
+if [ ips = "" ];then
+   exit 1
+fi
+
+_getIPs "ip" "port" "$ips"
 count=$COUNT 
 
-_testIPs $count 10
+_testIPs $count $size
+
+if ! [ -e "/root/okIPs.txt" ]; then
+    exit 1
+fi  
 
 _getIPs "okIp" "okPort" "$(cat /root/okIPs.txt)"
 count=$COUNT
@@ -261,7 +280,7 @@ if [ $count -lt 15 ]; then
     exit 1
 fi
 
-_randomIPs $count 10
+_randomIPs $count $size
 
 _updateIPs
 
