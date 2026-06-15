@@ -105,6 +105,9 @@ local tag=0
 local y=0
 local pid=0
 local delay="" 
+local code=""
+local time=""
+local ms=""
 
 [ -e "/root/okIPs.txt" ] && rm /root/okIPs.txt
 
@@ -157,13 +160,23 @@ while [ "$x" -lt "$count" ]; do
             --max-time 5 \
             -o /dev/null \
             -s \
-            -w '%{http_code}' \
+            -w '%{http_code},%{time_total}' \
             -x "socks5h://127.0.0.1:$tagPort" \
             https://www.gstatic.com/generate_204)
-     
-    if [ "$delay" = "204" ]; then
-        echo "$ip,$port ok"
-        echo "$ip,$port" >> /root/okIPs.txt
+
+    
+    code=${delay%,*}
+    time=${delay#*,}
+
+    ms=$(awk "BEGIN{printf \"%d\", $time*1000}")
+
+    if [ "$code" = "204" ]; then
+      if [ "$ms" -lt 1300 ]; then
+          echo "$ip,$port,$ms ok"
+          echo "$ip,$port" >> /root/okIPs.txt
+      else 
+          echo "$ip,$port,$ms no"   
+      fi
     fi
         y=$((y+1))
     done
