@@ -93,6 +93,8 @@ _testIPs(){
 
 local count=$1
 local size=$2
+local isGetMin=$3
+local max=$((MIN+400))
 local x=0
 
 local  inbounds=""
@@ -170,13 +172,22 @@ while [ "$x" -lt "$count" ]; do
 
     ms=$(awk "BEGIN{printf \"%d\", $time*1000}")
 
-    if [ "$code" = "204" ]; then
-      if [ "$ms" -lt 1300 ]; then
+    if [ "$code" = "204" ] && [ "$isGetMin" = "true" ];then
+     
+     [ "$ms" -lt "$MIN" ] && MIN=$ms 
+
+      echo "min:$MIN"
+    fi 
+
+    if [ "$code" = "204" ] && [ "$isGetMin" = "false" ]; then
+            
+      if [ "$ms" -lt "$max" ]; then
           echo "$ip,$port,$ms ok"
           echo "$ip,$port" >> /root/okIPs.txt
       else 
           echo "$ip,$port,$ms no"   
       fi
+
     fi
         y=$((y+1))
     done
@@ -280,7 +291,10 @@ fi
 _getIPs "ip" "port" "$ips"
 count=$COUNT 
 
-_testIPs $count $size
+MIN=99999
+_testIPs $count $size "true"
+
+_testIPs $count $size "false"
 
 if ! [ -e "/root/okIPs.txt" ]; then
     exit 1
