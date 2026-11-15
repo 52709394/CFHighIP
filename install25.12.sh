@@ -24,3 +24,28 @@ uci set system.@system[0].zonename='Asia/Shanghai'
 uci set system.@system[0].timezone='CST-8'
 uci commit system
 /etc/init.d/system restart
+
+uci set network.lan.ipaddr='192.168.100.1/24'
+uci commit network
+
+# 1. 启用 5G 射频硬件（将 disabled 设为 0）
+uci set wireless.radio1.disabled='0'
+
+uci set wireless.radio1.channel='149'
+
+# 2. 设置国家代码（非常重要，否则部分 5G 信道无法开启，CN 为中国，US 为美国）
+uci set wireless.radio1.country='CN'
+
+# 3. 启用对应的无线接口（如果接口默认是关闭状态）
+uci set wireless.default_radio1.disabled='0'
+
+# 4. 设置 5G Wi-Fi 名称 (SSID)
+uci set wireless.default_radio1.ssid='iWiFi_5G'
+
+# 5. 设置加密方式（推荐 psk2 即 WPA2-PSK）及密码（至少 8 位）
+uci set wireless.default_radio1.encryption='psk2'
+uci set wireless.default_radio1.key='aA123456xx'
+
+# 6. 保存配置并使其生效
+uci commit wireless
+wifi reload
