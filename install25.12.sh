@@ -10,9 +10,9 @@ apk update
 apk add luci-i18n-attendedsysupgrade-zh-cn luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn luci-i18n-base-zh-cn
 apk add block-mount kmod-lib-crc16 kmod-fs-ext4 kmod-scsi-core kmod-usb-storage
 
-wget -P /tmp "https://app.ifxxku.dpdns.org/ZhongGitHub/https://github.com/jerrykuku/luci-theme-argon/releases/download/v3.1.3/luci-app-argon-config-3.1.3-r1.apk"
-wget -P /tmp "https://app.ifxxku.dpdns.org/ZhongGitHub/https://github.com/jerrykuku/luci-theme-argon/releases/download/v3.1.3/luci-i18n-argon-config-zh-cn-3.1.3-r1.apk"
-wget -P /tmp "https://app.ifxxku.dpdns.org/ZhongGitHub/https://github.com/jerrykuku/luci-theme-argon/releases/download/v3.1.3/luci-theme-argon-3.1.3-r1.apk"
+wget -P /tmp "https://app.ifxxku.dpdns.org/ZhongGitHub/https://github.com/jerrykuku/luci-theme-argon/releases/download/v3.1.4/luci-app-argon-config-3.1.4-r1.apk"
+wget -P /tmp "https://app.ifxxku.dpdns.org/ZhongGitHub/https://github.com/jerrykuku/luci-theme-argon/releases/download/v3.1.4/luci-i18n-argon-config-zh-cn-3.1.4-r1.apk"
+wget -P /tmp "https://app.ifxxku.dpdns.org/ZhongGitHub/https://github.com/jerrykuku/luci-theme-argon/releases/download/v3.1.4/luci-theme-argon-3.1.4-r1.apk"
 
 apk add --allow-untrusted /tmp/luci*argon*.apk
 
