@@ -4,7 +4,7 @@ result=$(cat /etc/opkg/customfeeds.conf | grep "opkg.cooluc.com" )
 
 if [ -z "$result" ]; then
 wget -P /tmp https://opkg.cooluc.com/key-build.pub && \
-opkg-key add key-build.pub && \
+opkg-key add /tmp/key-build.pub && \
 echo "src/gz openwrt_extras https://opkg.cooluc.com/openwrt-24.10/$(. /etc/openwrt_release ; echo $DISTRIB_ARCH)" >> /etc/opkg/customfeeds.conf
 fi
 
