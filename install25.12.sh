@@ -1,6 +1,8 @@
 #!/bin/bash
 
-if [ ! -f "/etc/apk/keys/key-build.pem" ]; then
+result=$(cat /etc/apk/repositories.d/customfeeds.list | grep "opkg.cooluc.com" )
+
+if [ -z "$result" ]; then
 wget -P /tmp https://opkg.cooluc.com/key-build.pem && \
 mv /tmp/key-build.pem /etc/apk/keys && \
 echo "https://opkg.cooluc.com/openwrt-25.12/$(cat /etc/apk/arch)/packages.adb" >> /etc/apk/repositories.d/customfeeds.list
