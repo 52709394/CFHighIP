@@ -9,7 +9,7 @@ echo "src/gz openwrt_extras https://opkg.cooluc.com/openwrt-24.10/$(. /etc/openw
 fi
 
 opkg update
-opkg install luci-i18n-attendedsysupgrade-zh-cn luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn luci-i18n-base-zh-cn
+opkg install luci-i18n-firewall-zh-cn luci-i18n-package-manager-zh-cn luci-i18n-base-zh-cn
 opkg install block-mount kmod-lib-crc16 kmod-fs-ext4 kmod-scsi-core kmod-usb-storage
 
 wget -P /tmp "https://app.ifxxku.dpdns.org/ZhongGitHub/https://github.com/jerrykuku/luci-theme-argon/releases/download/v3.1.4/luci-app-argon-config_3.1.4_all.ipk"
